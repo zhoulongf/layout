@@ -8,10 +8,27 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@types/node": "^16.11.12",
     "core-js": "^3.6.5",
-    "vue": "^2.6.11"
+    "sass": "^1.44.0",
+    "sass-loader": "^12.4.0",
+    "typescript": "^4.5.2",
+    "vue": "^2.6.11",
+    "vue-loader": "^15.9.8",
+    "vue-markdown-loader": "^2.4.1",
+    "vue-router": "^3.5.2",
+    "vue-template-compiler": "^2.6.12",
+    "vuex": "^3.6.2"
+  },
+  "peerDependencies": {
+    "element-ui": "^2.15.6",
+    "vue": "^2.6.12",
+    "vue-router": "^3.5.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/plugin-transform-runtime": "^7.15.0",
+    "@babel/preset-env": "^7.11.5",
     "@vue/cli-plugin-babel": "^4.5.0",
     "@vue/cli-plugin-eslint": "^4.5.0",
     "@vue/cli-service": "^4.5.0",
