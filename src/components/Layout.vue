@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/Layout.vue
  * @Date: 2021-12-10 11:47:53
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-13 09:40:06
+ * @LastEditTime: 2021-12-13 14:30:02
  * @Description: 
 -->
 <script>
@@ -11,6 +11,7 @@ export default {
   name: "layout",
   data() {
     return {
+      names:'', 
       data:[
         {name:"fdgf"}
       ],
@@ -34,11 +35,18 @@ export default {
       ],
     };
   },
-  render(h) {
+  methods:{
+    currents(val){
+      console.log(val)
+    }
+  },
+  render() {
     return (
       <div>
         <comTable data={this.data} fields={this.columns}>
         </comTable>
+        <el-input v-model={this.names} />
+        <Pagination onPaginationChance ={this.currents} />
       </div>
     );
   },
