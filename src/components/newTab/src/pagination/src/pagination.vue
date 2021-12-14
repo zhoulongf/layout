@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/newTab/src/pagination/src/pagination.vue
  * @Date: 2021-12-13 11:02:07
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-13 15:29:27
+ * @LastEditTime: 2021-12-14 15:29:18
  * @Description: 
 -->
 <script>
@@ -45,6 +45,7 @@ export default {
       this.emitData(val,$type)
     },
     emitData($type = "pageSize", val) {
+      console.log($type,val)
       this.$emit("paginationChance", {
         type: $type, // pageSize  每页多少条改变   current 当前页改变
         data: {
