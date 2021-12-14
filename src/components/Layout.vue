@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/Layout.vue
  * @Date: 2021-12-10 11:47:53
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-14 16:19:25
+ * @LastEditTime: 2021-12-14 16:39:08
  * @Description: 
 -->
 <script>
@@ -12,7 +12,7 @@ export default {
   data() {
     return {
       names:'', 
-      tabeData:[{name:"ttytyty"}],
+      tabeData:[],
       columns: [
         {
           label: "源名称",

@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/newTab/src/table.vue
  * @Date: 2021-12-13 15:33:52
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-14 16:24:00
+ * @LastEditTime: 2021-12-14 16:55:10
  * @Description: 
 -->
 <script>
@@ -193,6 +193,10 @@ export default {
     },
   },
   methods: {
+      cloneVNode(h,vnode){//将vnode转为dom
+        if(!vnode) return null
+        return h(vnode.tag, vnode.data, vnode.children)
+      },
     /*Table Events*/
     tableEvents(name, val) {
       if (!name) return;
@@ -356,14 +360,11 @@ export default {
         "header-dragend": this.headerDragend,
       },
     };
-    const renderEmpty = () => {
-        console.log(this.$slots.empty)
-      return (
-        <div>
-          <slot name="empty" if={this.$slots.empty}>asas</slot>
-          <div else>{this.emptyText || "默认暂无数据"}</div>
-        </div>
-      );
+    const renderEmpty = (h) => {
+        const vnode =this.$slots.empty.map(this.cloneVNode.bind(this, h))
+        return (<div slot="empty">
+            {this.$slots.empty ? vnode : <div>{this.emptyText || "默认暂无数据"}</div>}
+        </div>)
     };
     //  序号区域
     const renderTableColumn = () => {
@@ -478,22 +479,19 @@ export default {
       });
       return tableColumn;
     };
-    const renderTab = () => {
-      return (
-        <el-table
-          v-loading={this.isLoading}
-          {...tabPorps}
-          data={this.data}
-          ref="eVueTable"
-        >
-          {renderEmpty()}
-          {this.isIndex && renderTableColumn()}
-          {this.isExpand && renderExpand()}
-          {this.isSelection && renderIsSelection()}
-          {renderTableColumns()}
-        </el-table>
-      );
-    };
+    let renderTab1 =() =>{
+        return h('el-table',{
+            ref:'eVueTable',
+            ...tabPorps,
+            data:this.data
+        },[
+            renderEmpty(h),
+            this.isIndex && renderTableColumn(),
+            this.isExpand && renderExpand(),
+            this.isSelection && renderIsSelection(),
+            renderTableColumns()
+        ])
+    }
     const renderPagination = () => {
       const props = {
         props: {
@@ -521,7 +519,7 @@ export default {
     };
     return (
       <div class="e-vue-table">
-        {renderTab()}
+        {renderTab1()}
         {renderPagination()}
       </div>
     );
