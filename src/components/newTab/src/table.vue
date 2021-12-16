@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/newTab/src/table.vue
  * @Date: 2021-12-13 15:33:52
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-14 16:55:10
+ * @LastEditTime: 2021-12-16 11:24:27
  * @Description: 
 -->
 <script>
@@ -37,7 +37,10 @@ export default {
     isPagination: false,
     indexAlign: String,
     isIndex: Boolean,
-    indexLabel: String,
+    indexLabel: {
+      type: String,
+      default: "序号",
+    },
     indexWidth: {
       type: [String, Number],
       default: 60,
@@ -193,10 +196,27 @@ export default {
     },
   },
   methods: {
-      cloneVNode(h,vnode){//将vnode转为dom
-        if(!vnode) return null
-        return h(vnode.tag, vnode.data, vnode.children)
-      },
+    //将vnode转为dom
+    cloneVNode(h, vnode) {
+      if (!vnode) return null;
+      return h(vnode.tag, vnode.data, vnode.children);
+    },
+    // showTooltip render
+    formatTooltip(h, item) {
+      item.scopedSlots = item.scopedSlots || {
+        default:item.scopedSlots?.default || (({ row, column, $index }) => {//默认插槽
+          return h("span", [
+            column && column.formatter
+              ? column.formatter(row, column, row[item.prop], $index)
+              : this._v(row[item.prop] || this.emptyText || "--"),
+          ]);
+        }),
+        header: item.scopedSlots?.header || (({column,$index}) =>{//头部样式默认插槽，插槽和renderHeader同时存在时候renderHeader优先级更高
+           return h('div',{class:'cell'},[column.label])
+         })
+      };
+      return item
+    },
     /*Table Events*/
     tableEvents(name, val) {
       if (!name) return;
@@ -310,7 +330,7 @@ export default {
     },
     //对 Table 进行重新布局。当 Table 或其祖先元素由隐藏切换为显示时，可能需要调用此方法
     doLayout() {
-      this.tableMethods('doLayout');
+      this.tableMethods("doLayout");
     },
     //用于多选表格，切换某一行的选中状态，如果使用了第二个参数，则是设置这一行选中与否（selected 为 true 则选中）
     toggleRowSelection(row, selected) {
@@ -334,49 +354,33 @@ export default {
     },
     /**table-column的方法*/
     filterMethod(value, row, column) {
-      this.$emit('filterMethod', {value, row, column});
+      this.$emit("filterMethod", { value, row, column });
     },
   },
   render(h) {
-    const tabPorps = {
-      props: {
-        ...this.$props,
-      },
-      on: {
-        "selection-change": this.selectionChange,
-        select: this.select,
-        "select-all": this.selectAll,
-        "sort-change": this.sortChange,
-        "row-click": this.rowClick,
-        "row-dblclick": this.rowDblclick,
-        "cell-mouse-enter": this.cellMouseEnter,
-        "cell-mouse-leave": this.cellMouseLeave,
-        "cell-click": this.cellClick,
-        "cell-dblclick": this.cellDblclick,
-        "current-change": this.currentRowChange,
-        "expand-change": this.expandChange,
-        "row-contextmenu": this.rowContextmenu,
-        "header-click": this.headerClick,
-        "header-dragend": this.headerDragend,
-      },
-    };
     const renderEmpty = (h) => {
-        const vnode =this.$slots.empty.map(this.cloneVNode.bind(this, h))
-        return (<div slot="empty">
-            {this.$slots.empty ? vnode : <div>{this.emptyText || "默认暂无数据"}</div>}
-        </div>)
+      const vnode = this.$slots.empty.map(this.cloneVNode.bind(this, h));
+      return (
+        <div slot="empty">
+          {this.$slots.empty ? (
+            vnode
+          ) : (
+            <div>{this.emptyText || "默认暂无数据"}</div>
+          )}
+        </div>
+      );
     };
     //  序号区域
-    const renderTableColumn = () => {
-      return (
-        <el-table-column
-          type="index"
-          label={this.indexLabel}
-          width={this.indexWidth || this.config.indexWidth}
-          fixed={this.indexFixed}
-          align={this.indexAlign}
-        ></el-table-column>
-      );
+    const renderTableColumn = (h) => {
+      return h("el-table-column", {
+        props: {
+          type: "index",
+          label: this.indexLabel,
+          width: this.indexWidth || this.config.indexWidth,
+          fixed: this.indexFixed,
+          align: this.indexAlign,
+        },
+      });
     };
     // 可展开区域
     const renderExpand = () => {
@@ -413,36 +417,17 @@ export default {
         ></el-table-column>
       );
     };
-    //头部
-    const renderHeaderColumn = (item) => {
-      return (
-        <template slot="header">
-          <slot v-if="item.slotHeader" name={item.slotHeader}></slot>
-        </template>
-      );
-    };
-    //插槽模式
-    const renderSlotColumn = (item) => {
-      const scope = this.$slots.scope;
-      // console.log(scopedSlots)
-      return (
-        <template slot-scope={item}>
-          <slot if={item.slotName} data={item} name={item.slotName}></slot>
-          <span else>
-            {(item.prop && String(item.prop)) || propEmptyDefault || "-"}
-          </span>
-        </template>
-      );
-    };
     //具体的每一项
-    const renderTableColumns = () => {
+    const renderTableColumns = (h, columns) => {
       let tableColumn = [];
-      this.fields.forEach((item, index) => {
+      //初始化的时候给column设置scopeSlots
+      columns.forEach((item, index) => {
         let props = {
+            scopedSlots: item.scopedSlots,//可以自定义插槽可以再次定义或者其他
           props: {
             key: index,
             label: item.label,
-            prop:item.prop,
+            prop: item.prop,
             type: item.colType,
             index:
               item.colType === "index" && item.indexMethod
@@ -467,31 +452,62 @@ export default {
             "filter-multiple": item.filterMultiple,
             "filter-method": item.filters ? this.filterMethod : null,
             "filtered-value": item.filteredValue,
-          }
+          },
+          key: item.label,
         };
-        let column = (
-          <el-table-column {...props}>
-            {item.slotHeader && renderHeaderColumn(item)}
-            {renderSlotColumn(item)}
-          </el-table-column>
+        let column = h(
+          "el-table-column",
+          {
+            ...props,
+          },
+          [
+            // item.scopedSlots.default, //可以自定义插槽
+          ]
         );
         tableColumn.push(column);
       });
       return tableColumn;
     };
-    let renderTab1 =() =>{
-        return h('el-table',{
-            ref:'eVueTable',
-            ...tabPorps,
-            data:this.data
-        },[
-            renderEmpty(h),
-            this.isIndex && renderTableColumn(),
-            this.isExpand && renderExpand(),
-            this.isSelection && renderIsSelection(),
-            renderTableColumns()
-        ])
-    }
+    const renderTab = () => {
+      //table的属性设置
+      const tableProps = {
+        props: {
+          ...this.$props,
+        },
+        on: {
+          "selection-change": this.selectionChange,
+          select: this.select,
+          "select-all": this.selectAll,
+          "sort-change": this.sortChange,
+          "row-click": this.rowClick,
+          "row-dblclick": this.rowDblclick,
+          "cell-mouse-enter": this.cellMouseEnter,
+          "cell-mouse-leave": this.cellMouseLeave,
+          "cell-click": this.cellClick,
+          "cell-dblclick": this.cellDblclick,
+          "current-change": this.currentRowChange,
+          "expand-change": this.expandChange,
+          "row-contextmenu": this.rowContextmenu,
+          "header-click": this.headerClick,
+          "header-dragend": this.headerDragend,
+        },
+      };
+      const columns = this.fields.map(this.formatTooltip.bind(this, h));
+      return h(
+        "el-table",
+        {
+          ref: "eVueTable",
+          ...tableProps,
+        },
+        [
+          renderEmpty(h),
+          this.isIndex && renderTableColumn(h),
+          this.isExpand && renderExpand(),
+          this.isSelection && renderIsSelection(),
+          renderTableColumns(h, columns),
+        ]
+      );
+    };
     const renderPagination = () => {
       const props = {
         props: {
@@ -519,7 +535,7 @@ export default {
     };
     return (
       <div class="e-vue-table">
-        {renderTab1()}
+        {renderTab()}
         {renderPagination()}
       </div>
     );
@@ -534,7 +550,6 @@ export default {
   }
 
   .e-vue-pagination-left {
-
   }
 
   .e-vue-pagination-right {
