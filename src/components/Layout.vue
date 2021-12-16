@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/Layout.vue
  * @Date: 2021-12-10 11:47:53
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 15:11:41
+ * @LastEditTime: 2021-12-16 16:00:23
  * @Description: 
 -->
 <script>
@@ -18,7 +18,7 @@ export default {
     return {
       defaultImg:require('../assets/logo.png'),
       names: "",
-      tabeData: [{name:2333,name2:2333},{name:54,name2:233433}],
+      tabeData: [],
       columns: [
         {
           label:'展开项',
@@ -92,12 +92,12 @@ export default {
           fields={this.columns}
           onSelectionChange = {this.selectionChange}
         >
-          <div slot="empty">哈哈无数据 <img src= {this.defaultImg} /></div>
         </zTable>
         <el-input v-model={this.names} />
       </div>
     );
   }
+            // <div slot="empty">哈哈无数据 <img src= {this.defaultImg} /></div>
 };
 </script>
 <style scoped>

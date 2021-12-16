@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/newTab/src/table.vue
  * @Date: 2021-12-13 15:33:52
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 15:23:04
+ * @LastEditTime: 2021-12-16 16:13:21
  * @Description: 
 -->
 <script>
@@ -34,8 +34,11 @@ export default {
         return [10, 20, 30, 40];
       },
     },
-    isPagination: false,
-    indexAlign: String,
+    isPagination: {//是否显示分页
+      type:Boolean,
+      default:false
+    },
+    indexAlign: String,//序号的排列
     isIndex: Boolean,//是否需要序号
     indexLabel: {
       type: String,
@@ -48,7 +51,7 @@ export default {
     indexFixed: {
       type: String,
     },
-    expandWidth: {
+    expandWidth: {//展开项的宽
       type: [String, Number],
       default: 60,
     },
@@ -56,7 +59,7 @@ export default {
     expandFixed: String,
     expandAlign: String,
     slotExpand: Boolean,
-    selectionWidth: {
+    selectionWidth: {//多选的宽
       type: [String, Number],
       default: 60,
     },
@@ -163,13 +166,9 @@ export default {
   },
   data() {
     return {
-      config: {
-        indexWidth: 50,
-        expandWidth: 50,
-        selectionWidth: 50,
-      },
       currentSelection: [], // 当前选择的
       isCanChange: false, // 是否选择时可以改变了
+      emptyImg:require('./img/vscode.png')
     };
   },
   watch: {
@@ -207,7 +206,7 @@ export default {
       if (!vnode) return null;
       return h(vnode.tag, vnode.data, vnode.children);
     },
-    // showTooltip render
+    // 插槽再render中的使用
     formatTooltip(h, item) {
       if(item.type == 'expand'){
          item.scopedSlots = item.scopedSlots || {
@@ -231,41 +230,9 @@ export default {
       }
       return item
     },
-    /*Table Events*/
-    tableEvents(name, val) {
-      if (!name) return;
-      this.$emit(name, val);
-    },
     //当选择项发生变化时会触发该事件
     selectionChange(ev) {
-      let endSelectData = ev;
-      // if (this.option.selectionKey) {
-      //   // 只要在存在key的情况下才梳理
-      //   if (!this.isCanChange) return;
-      //   this.data.map((res) => {
-      //     const $in = ev.find(
-      //       (x) => x[this.option.selectionKey] === res[this.option.selectionKey]
-      //     );
-      //     //是否存在被选中
-      //     const $selectionIndex = this.currentSelection.findIndex(
-      //       (x) => x[this.option.selectionKey] === res[this.option.selectionKey]
-      //     );
-      //     if ($in) {
-      //       //当前选中
-      //       if ($selectionIndex < 0) {
-      //         //不存在
-      //         this.currentSelection.push(res);
-      //       }
-      //     } else {
-      //       //取消
-      //       if ($selectionIndex >= 0) {
-      //         //存在
-      //         this.currentSelection.splice($selectionIndex, 1);
-      //       }
-      //     }
-      //   });
-      //   endSelectData = this.currentSelection;
-      // }
+      this.currentSelection = ev;
       this.$emit("selectionChange", endSelectData);
     },
     //当用户手动勾选数据行的 Checkbox 时触发的事件
@@ -371,41 +338,48 @@ export default {
     },
   },
   render(h) {
-    const renderEmpty = (h) => {
-      const vnode = this.$slots.empty ? this.$slots.empty.map(this.cloneVNode.bind(this, h)) : null
-      return (
-        <div slot="empty">
-          {vnode || (
-            <div>默认暂无数据</div>
-          )}
-        </div>
-      );
-    };
-    //  序号区域
-    const renderTableColumn = (h) => {
-      return h("el-table-column", {
+    //table
+    const renderTab = () => {
+      //table的属性设置
+      const tableProps = {
         props: {
-          type: "index",
-          label: this.indexLabel,
-          width: this.indexWidth || this.config.indexWidth,
-          fixed: this.indexFixed,
-          align: this.indexAlign,
+          ...this.$props,
         },
-      });
-    };
-    //多选区域
-    const renderIsSelection = () => {
-      return (
-        <el-table-column
-          type="selection"
-          width={this.selectionWidth || this.config.selectionWidth}
-          fixed={this.selectionFixed}
-          align={this.selectionAlign}
-          selectable={this.selectable}
-        ></el-table-column>
+        on: {
+          "selection-change": this.selectionChange,
+          select: this.select,
+          "select-all": this.selectAll,
+          "sort-change": this.sortChange,
+          "row-click": this.rowClick,
+          "row-dblclick": this.rowDblclick,
+          "cell-mouse-enter": this.cellMouseEnter,
+          "cell-mouse-leave": this.cellMouseLeave,
+          "cell-click": this.cellClick,
+          "cell-dblclick": this.cellDblclick,
+          "current-change": this.currentRowChange,
+          "expand-change": this.expandChange,
+          "row-contextmenu": this.rowContextmenu,
+          "header-click": this.headerClick,
+          "header-dragend": this.headerDragend,
+          'show-header': this.showHeader 
+        },
+      };
+      const columns = this.fields.map(this.formatTooltip.bind(this, h));
+      return h(
+        "el-table",
+        {
+          ref: "eVueTable",
+          ...tableProps,
+        },
+        [
+          renderEmpty(h),
+          this.isIndex && renderTableColumn(h),
+          this.isSelection && renderIsSelection(),
+          renderTableColumns(h, columns),
+        ]
       );
     };
-    //具体的每一项
+    //el-table-column具体的每一项
     const renderTableColumns = (h, columns) => {
       let tableColumn = [];
       //初始化的时候给column设置scopeSlots
@@ -453,46 +427,42 @@ export default {
       });
       return tableColumn;
     };
-    const renderTab = () => {
-      //table的属性设置
-      const tableProps = {
-        props: {
-          ...this.$props,
-        },
-        on: {
-          "selection-change": this.selectionChange,
-          select: this.select,
-          "select-all": this.selectAll,
-          "sort-change": this.sortChange,
-          "row-click": this.rowClick,
-          "row-dblclick": this.rowDblclick,
-          "cell-mouse-enter": this.cellMouseEnter,
-          "cell-mouse-leave": this.cellMouseLeave,
-          "cell-click": this.cellClick,
-          "cell-dblclick": this.cellDblclick,
-          "current-change": this.currentRowChange,
-          "expand-change": this.expandChange,
-          "row-contextmenu": this.rowContextmenu,
-          "header-click": this.headerClick,
-          "header-dragend": this.headerDragend,
-          'show-header': this.showHeader 
-        },
-      };
-      const columns = this.fields.map(this.formatTooltip.bind(this, h));
-      return h(
-        "el-table",
-        {
-          ref: "eVueTable",
-          ...tableProps,
-        },
-        [
-          renderEmpty(h),
-          this.isIndex && renderTableColumn(h),
-          this.isSelection && renderIsSelection(),
-          renderTableColumns(h, columns),
-        ]
+    //数据为空的时候的默认展示
+    const renderEmpty = (h) => {
+      const vnode = this.$slots.empty ? this.$slots.empty.map(this.cloneVNode.bind(this, h)) : null
+      return (
+        <div slot="empty">
+          {vnode || (
+            <div class='empty'><img class='empty-img' src={this.emptyImg}/> 暂无数据...</div>
+          )}
+        </div>
       );
     };
+    //序号区域
+    const renderTableColumn = (h) => {
+      return h("el-table-column", {
+        props: {
+          type: "index",
+          label: this.indexLabel,
+          width: this.indexWidth ,
+          fixed: this.indexFixed,
+          align: this.indexAlign,
+        },
+      });
+    };
+    //多选区域
+    const renderIsSelection = () => {
+      return (
+        <el-table-column
+          type="selection"
+          width={this.selectionWidth}
+          fixed={this.selectionFixed}
+          align={this.selectionAlign}
+          selectable={this.selectable}
+        ></el-table-column>
+      );
+    };
+    //分页组件
     const renderPagination = () => {
       const props = {
         props: {
@@ -508,7 +478,7 @@ export default {
         },
       };
       return (
-        <div class="e-vue-pagination" if={this.isPagination}>
+        <div class="e-vue-pagination">
           <div class="e-vue-pagination-left">
             <slot name="slotPagination"></slot>
           </div>
@@ -519,9 +489,9 @@ export default {
       );
     };
     return (
-      <div class="e-vue-table">
+      <div class="e-vue-table" v-loading={this.isLoading}>
         {renderTab()}
-        {renderPagination()}
+        {this.isPagination && renderPagination()}
       </div>
     );
   },
@@ -529,6 +499,19 @@ export default {
 </script>
 <style lang="scss" scoped>
 .e-vue-table {
+  .empty{
+    display: flex;
+    font-size: 24px;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    &-img{
+      width: 100px;
+      height: 100%;
+      object-fit: contain;
+      margin-right: 10px;
+    }
+  }
   .e-vue-pagination {
     margin-top: 15px;
     display: flex;
