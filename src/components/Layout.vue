@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/Layout.vue
  * @Date: 2021-12-10 11:47:53
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 11:20:33
+ * @LastEditTime: 2021-12-16 11:31:44
  * @Description: 
 -->
 <script>
@@ -16,11 +16,9 @@ export default {
   name: "layout",
   data() {
     return {
+      defaultImg:require('../assets/logo.png'),
       names: "",
-      tabeData: [
-        { name: "张三", name2: "李四" },
-        { name: "张1", name2: "李2" },
-      ],
+      tabeData: [],
       columns: [
         {
           label: "源名称",
@@ -77,7 +75,7 @@ export default {
           isExpand={false}
           fields={this.columns}
         >
-          <div slot="empty">哈哈无数据</div>
+          <div slot="empty">哈哈无数据 <img src= {this.defaultImg} /></div>
         </zTable>
         <el-input v-model={this.names} />
       </div>

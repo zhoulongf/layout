@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/newTab/src/table.vue
  * @Date: 2021-12-13 15:33:52
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 11:24:27
+ * @LastEditTime: 2021-12-16 11:29:07
  * @Description: 
 -->
 <script>
@@ -359,12 +359,10 @@ export default {
   },
   render(h) {
     const renderEmpty = (h) => {
-      const vnode = this.$slots.empty.map(this.cloneVNode.bind(this, h));
+      const vnode = this.$slots.empty ? this.$slots.empty.map(this.cloneVNode.bind(this, h)) : null
       return (
         <div slot="empty">
-          {this.$slots.empty ? (
-            vnode
-          ) : (
+          {vnode || (
             <div>{this.emptyText || "默认暂无数据"}</div>
           )}
         </div>
