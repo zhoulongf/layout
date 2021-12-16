@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/newTab/src/table.vue
  * @Date: 2021-12-13 15:33:52
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 11:29:07
+ * @LastEditTime: 2021-12-16 15:23:04
  * @Description: 
 -->
 <script>
@@ -36,7 +36,7 @@ export default {
     },
     isPagination: false,
     indexAlign: String,
-    isIndex: Boolean,
+    isIndex: Boolean,//是否需要序号
     indexLabel: {
       type: String,
       default: "序号",
@@ -48,10 +48,6 @@ export default {
     indexFixed: {
       type: String,
     },
-    isExpand: {
-      type: Boolean,
-      default: false,
-    },
     expandWidth: {
       type: [String, Number],
       default: 60,
@@ -60,15 +56,25 @@ export default {
     expandFixed: String,
     expandAlign: String,
     slotExpand: Boolean,
-    selectionLabel: String,
     selectionWidth: {
       type: [String, Number],
       default: 60,
     },
-    selectionFixed: String,
-    selectionAlign: String,
-    selectable: Object,
-    //是否多选
+    selectionFixed: {
+      type:String,
+      default:'left'
+    },
+    selectionAlign: {
+      type:String,
+      default:'left'
+    },
+    selectable: {//多选，每一项默认都可选
+      type:Function,
+      default: (row,index) =>{
+        return  true
+      }
+    },
+    //多选值
     selectionKey: {
       type: [String, Number],
       default: "",
@@ -111,7 +117,7 @@ export default {
       type: Boolean,
       default: true,
     },
-    showHeader: {
+    showHeader: {//控制头部显示隐藏
       type: Boolean,
       default: true,
     },
@@ -203,18 +209,26 @@ export default {
     },
     // showTooltip render
     formatTooltip(h, item) {
-      item.scopedSlots = item.scopedSlots || {
-        default:item.scopedSlots?.default || (({ row, column, $index }) => {//默认插槽
-          return h("span", [
-            column && column.formatter
-              ? column.formatter(row, column, row[item.prop], $index)
-              : this._v(row[item.prop] || this.emptyText || "--"),
-          ]);
-        }),
-        header: item.scopedSlots?.header || (({column,$index}) =>{//头部样式默认插槽，插槽和renderHeader同时存在时候renderHeader优先级更高
-           return h('div',{class:'cell'},[column.label])
-         })
-      };
+      if(item.type == 'expand'){
+         item.scopedSlots = item.scopedSlots || {
+           default: (() =>{//如果设置展开项，但是未加数据的默认
+            return h('div',[`暂无展开项数据`])
+          })
+         }
+      }else{
+        item.scopedSlots = item.scopedSlots || {
+          default:item.scopedSlots?.default || (({ row, column, $index }) => {//默认插槽
+            return h("span", [
+              column && column.formatter
+                ? column.formatter(row, column, row[item.prop], $index)
+                : this._v(row[item.prop] || this.emptyText || "--"),
+            ]);
+          }),
+          header: item.scopedSlots?.header || (({column,$index}) =>{//头部样式默认插槽，插槽和renderHeader同时存在时候renderHeader优先级更高
+            return h('div',{class:'cell'},[column.label])
+          })
+        };
+      }
       return item
     },
     /*Table Events*/
@@ -224,35 +238,34 @@ export default {
     },
     //当选择项发生变化时会触发该事件
     selectionChange(ev) {
-      console.log("selectionChange", ev);
       let endSelectData = ev;
-      if (this.option.selectionKey) {
-        // 只要在存在key的情况下才梳理
-        if (!this.isCanChange) return;
-        this.data.map((res) => {
-          const $in = ev.find(
-            (x) => x[this.option.selectionKey] === res[this.option.selectionKey]
-          );
-          //是否存在被选中
-          const $selectionIndex = this.currentSelection.findIndex(
-            (x) => x[this.option.selectionKey] === res[this.option.selectionKey]
-          );
-          if ($in) {
-            //当前选中
-            if ($selectionIndex < 0) {
-              //不存在
-              this.currentSelection.push(res);
-            }
-          } else {
-            //取消
-            if ($selectionIndex >= 0) {
-              //存在
-              this.currentSelection.splice($selectionIndex, 1);
-            }
-          }
-        });
-        endSelectData = this.currentSelection;
-      }
+      // if (this.option.selectionKey) {
+      //   // 只要在存在key的情况下才梳理
+      //   if (!this.isCanChange) return;
+      //   this.data.map((res) => {
+      //     const $in = ev.find(
+      //       (x) => x[this.option.selectionKey] === res[this.option.selectionKey]
+      //     );
+      //     //是否存在被选中
+      //     const $selectionIndex = this.currentSelection.findIndex(
+      //       (x) => x[this.option.selectionKey] === res[this.option.selectionKey]
+      //     );
+      //     if ($in) {
+      //       //当前选中
+      //       if ($selectionIndex < 0) {
+      //         //不存在
+      //         this.currentSelection.push(res);
+      //       }
+      //     } else {
+      //       //取消
+      //       if ($selectionIndex >= 0) {
+      //         //存在
+      //         this.currentSelection.splice($selectionIndex, 1);
+      //       }
+      //     }
+      //   });
+      //   endSelectData = this.currentSelection;
+      // }
       this.$emit("selectionChange", endSelectData);
     },
     //当用户手动勾选数据行的 Checkbox 时触发的事件
@@ -363,7 +376,7 @@ export default {
       return (
         <div slot="empty">
           {vnode || (
-            <div>{this.emptyText || "默认暂无数据"}</div>
+            <div>默认暂无数据</div>
           )}
         </div>
       );
@@ -380,34 +393,11 @@ export default {
         },
       });
     };
-    // 可展开区域
-    const renderExpand = () => {
-      const scope = this.$slots.scope;
-      return (
-        <el-table-column
-          type="expand"
-          label={this.expandLabel}
-          width={this.expandWidth || this.config.expandWidth}
-          fixed={this.expandFixed}
-          align={this.expandAlign}
-        >
-          <template scopedSlots="scope">
-            <slot
-              if={this.slotExpand}
-              data={scope.row}
-              index={scope.$index}
-              name={scope.slotExpand}
-            ></slot>
-          </template>
-        </el-table-column>
-      );
-    };
-    //可选区域
+    //多选区域
     const renderIsSelection = () => {
       return (
         <el-table-column
           type="selection"
-          label={this.selectionLabel}
           width={this.selectionWidth || this.config.selectionWidth}
           fixed={this.selectionFixed}
           align={this.selectionAlign}
@@ -421,12 +411,12 @@ export default {
       //初始化的时候给column设置scopeSlots
       columns.forEach((item, index) => {
         let props = {
-            scopedSlots: item.scopedSlots,//可以自定义插槽可以再次定义或者其他
+          scopedSlots: item.scopedSlots,//可以自定义插槽可以再次定义或者其他
           props: {
             key: index,
             label: item.label,
             prop: item.prop,
-            type: item.colType,
+            type: item.type,
             index:
               item.colType === "index" && item.indexMethod
                 ? item.indexMethod
@@ -443,7 +433,6 @@ export default {
             align: item.align,
             "class-name": item.className,
             "label-class-name": item.labelClassName,
-            selectable: item.selectable,
             "reserve-selection": item.reserveSelection || false,
             filters: item.filters || null,
             "filter-placement": item.filterPlacement,
@@ -458,9 +447,7 @@ export default {
           {
             ...props,
           },
-          [
-            // item.scopedSlots.default, //可以自定义插槽
-          ]
+          []
         );
         tableColumn.push(column);
       });
@@ -488,6 +475,7 @@ export default {
           "row-contextmenu": this.rowContextmenu,
           "header-click": this.headerClick,
           "header-dragend": this.headerDragend,
+          'show-header': this.showHeader 
         },
       };
       const columns = this.fields.map(this.formatTooltip.bind(this, h));
@@ -500,7 +488,6 @@ export default {
         [
           renderEmpty(h),
           this.isIndex && renderTableColumn(h),
-          this.isExpand && renderExpand(),
           this.isSelection && renderIsSelection(),
           renderTableColumns(h, columns),
         ]

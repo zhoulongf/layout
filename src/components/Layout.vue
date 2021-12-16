@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/Layout.vue
  * @Date: 2021-12-10 11:47:53
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 11:31:44
+ * @LastEditTime: 2021-12-16 15:11:41
  * @Description: 
 -->
 <script>
@@ -18,11 +18,24 @@ export default {
     return {
       defaultImg:require('../assets/logo.png'),
       names: "",
-      tabeData: [],
+      tabeData: [{name:2333,name2:2333},{name:54,name2:233433}],
       columns: [
+        {
+          label:'展开项',
+          type:"expand",
+           width:120,
+          scopedSlots:{
+             default: (scope) => (
+              <div>
+                <el-button type="text">哈哈{scope.row.name}eee</el-button>
+              </div>
+            )
+          }
+        },
         {
           label: "源名称",
           prop: "name",
+          width:120,
           align: "center",
           renderHeader:this.renderHeader,
           scopedSlots: {
@@ -64,6 +77,9 @@ export default {
     },
     currents(val) {
       console.log(val);
+    },
+    selectionChange(val){
+      console.log(val)
     }
   },
   render() {
@@ -71,9 +87,10 @@ export default {
       <div>
         <zTable
           data={this.tabeData}
-          isIndex={true}
-          isExpand={false}
+          isIndex={false}
+          isSelection={true}
           fields={this.columns}
+          onSelectionChange = {this.selectionChange}
         >
           <div slot="empty">哈哈无数据 <img src= {this.defaultImg} /></div>
         </zTable>
