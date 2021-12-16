@@ -3,7 +3,7 @@
  * @FilePath: /testvue/src/components/Layout.vue
  * @Date: 2021-12-10 11:47:53
  * @LastEditors: zhoulf
- * @LastEditTime: 2021-12-16 16:00:23
+ * @LastEditTime: 2021-12-16 19:28:50
  * @Description: 
 -->
 <script>
@@ -94,6 +94,7 @@ export default {
         >
         </zTable>
         <el-input v-model={this.names} />
+        <EForm />
       </div>
     );
   }
